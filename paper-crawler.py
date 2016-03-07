@@ -229,13 +229,21 @@ def get_paper_data(paper, page_type, page_address):
         pdf_link = urljoin(page_address, paper.find('a', text='Full Paper').attrs['href'])
         abstract_data = sub(r'[\s]+', ' ', paper.find('p', {'class': 'abstracts'}).text)
 
-    elif page_type == 'icml2009' or page_type == 'icml2008':
+    elif page_type == 'icml2009':
         title = paper.find('h3').text
         authors = paper.find('i').text.replace(' and ', ', ')
         web_link = page_address
         paper_file_name = paper.find('a', text='Full paper').attrs['href'].split('/')[-1]
         pdf_link = urljoin(page_address, paper.find('a', text='Full paper').attrs['href'])
         abstract_data = paper.find('a', text='Full paper').find_previous('p').text
+
+    elif page_type == 'icml2008':
+        title = paper.find('h3').text
+        authors = paper.find('i').text.replace(' and ', ', ')
+        web_link = page_address
+        paper_file_name = paper.find('a', text='Full paper').attrs['href'].split('/')[-1]
+        pdf_link = urljoin(page_address, paper.find('a', text='Full paper').attrs['href'])
+        abstract_data = paper.contents[8].text
 
     elif page_type == 'icml2007':
         paper_page_request = requests.get(urljoin(page_address, paper.find('a', text='[Abstract]').attrs['href']))
@@ -292,6 +300,9 @@ with open(csv_file_name, 'w', newline='', encoding='utf-8') as csv_file:
         os.makedirs(page_group_folder_name, exist_ok=True)
 
         for page in page_group['data']:
+            if page_group['type'] != 'icml2008' and page_group['type'] != 'icml2009':
+                continue
+
             print('Crawling page ' + page_group['name'] + ' ' + page['year'], end='')
             sys.stdout.flush()
 
