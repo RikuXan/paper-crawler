@@ -184,8 +184,7 @@ def get_paper_data(paper, page_type, page_address):
     year = ''
 
     if page_type == 'icml_jmlr_hosted':
-        paper_page_request = requests.get(urljoin(page_address, paper.find('a', text='abs').attrs['href']))
-        paper_page_soup = BeautifulSoup(paper_page_request.content.decode(paper_page_request.encoding), 'html.parser')
+        paper_page_soup = BeautifulSoup(requests.get(urljoin(page_address, paper.find('a', text='abs').attrs['href'])).text, 'html.parser')
 
         title = paper.find('p', {'class': 'title'}).text
         authors = paper.find('span', {'class': 'authors'}).text.replace('\t', '').replace('\n', '').replace(',', ', ')
@@ -195,8 +194,7 @@ def get_paper_data(paper, page_type, page_address):
         abstract_data = paper_page_soup.find('div', id='abstract').text
 
     elif page_type == 'jmlr_volume':
-        paper_page_request = requests.get(urljoin(page_address, paper.find('a', text='abs').attrs['href']))
-        paper_page_soup = BeautifulSoup(manipulate_page_html(paper_page_request.content.decode(paper_page_request.encoding), 'jmlr_paper'), 'html.parser')
+        paper_page_soup = BeautifulSoup(manipulate_page_html(requests.get(urljoin(page_address, paper.find('a', text='abs').attrs['href'])).text, 'jmlr_paper'), 'html.parser')
 
         title = paper.find('dt').next_element
         authors = paper.find('dd').find('i').text
@@ -246,8 +244,7 @@ def get_paper_data(paper, page_type, page_address):
         abstract_data = paper.contents[8].text
 
     elif page_type == 'icml2007':
-        paper_page_request = requests.get(urljoin(page_address, paper.find('a', text='[Abstract]').attrs['href']))
-        paper_page_soup = BeautifulSoup(paper_page_request.content.decode(paper_page_request.encoding), 'html.parser')
+        paper_page_soup = BeautifulSoup(requests.get(urljoin(page_address, paper.find('a', text='[Abstract]').attrs['href'])).text, 'html.parser')
 
         title = paper_page_soup.find('table').contents[0].text
         authors = ', '.join([sub(r' - .*', r'', author) for author in paper_page_soup.find('table').contents[1].text.split('\n\n')])
@@ -273,8 +270,7 @@ def get_paper_data(paper, page_type, page_address):
         abstract_data = ''
 
     elif page_type == 'papers_nips':
-        paper_page_request = requests.get(urljoin(page_address, paper.find('a').attrs['href']))
-        paper_page_soup = BeautifulSoup(paper_page_request.content.decode(paper_page_request.encoding), 'html.parser')
+        paper_page_soup = BeautifulSoup(requests.get(urljoin(page_address, paper.find('a').attrs['href'])).text, 'html.parser')
 
         title = paper_page_soup.find('h2', {'class': 'subtitle'}).text
         authors = ', '.join([author.text for author in paper_page_soup.find('ul', {'class': 'authors'}).find_all('li')])
@@ -300,15 +296,14 @@ with open(csv_file_name, 'w', newline='', encoding='utf-8') as csv_file:
         os.makedirs(page_group_folder_name, exist_ok=True)
 
         for page in page_group['data']:
-            if page_group['type'] != 'icml2008' and page_group['type'] != 'icml2009':
+            if page_group['type'] != 'jmlr2014':
                 continue
 
             print('Crawling page ' + page_group['name'] + ' ' + page['year'], end='')
             sys.stdout.flush()
 
             # Extract and parse page data
-            page_request = requests.get(page['link'])
-            page_data = manipulate_page_html(page_request.content.decode(page_request.encoding), page_group['type'])
+            page_data = manipulate_page_html(requests.get(page['link']).text, page_group['type'])
             page_soup = BeautifulSoup(page_data, 'html.parser')
             paper_list = get_paper_list(page_soup, page_group['type'])[:5]
 
@@ -349,10 +344,8 @@ with open(csv_file_name, 'w', newline='', encoding='utf-8') as csv_file:
 # Problems:
 # - NIPS has no abstracts 2005 - 2007 (text is "Abstract missing"
 # - ICML has no abstracts 2005 - 2006
-# - Difference between requests.get().text and requests.get().content.decode(requests.get().encoding)?
 
 # Testparse results:
 # - Encoding errors:
 #   - ICML 2013, muandet13.pdf, Author
 #   - JMLR 2014, lember14a.pdf, Author, Abstract
-#   - ICML 2008, all, Abstract
