@@ -108,10 +108,12 @@ def clean_text(text):
 
 
 def get_paper_list(page_soup, page_type):
-    if page_type == 'icml_jmlr_hosted' or page_type == 'icml2012' or page_type == 'icml2010' \
-            or page_type == 'icml2011' or page_type == 'icml2009' or page_type == 'icml2008'\
+    if page_type == 'icml_jmlr_hosted' or page_type == 'icml2010' \
+            or page_type == 'icml2011' or page_type == 'icml2009' or page_type == 'icml2008' \
             or page_type == 'icml2007' or page_type == 'icml2005':
         return page_soup.find_all('div', {'class': 'paper'})
+    elif page_type == 'icml2012':
+        return [paper for paper in page_soup.find_all('div', {'class': 'paper'}) if paper.find('a', text='ICML version (pdf)') is not None]
     elif page_type == 'icml2006':
         return page_soup.find_all('tr')[5:]
     elif page_type == 'jmlr_volume':
@@ -297,16 +299,13 @@ with open(csv_file_name, 'w', newline='', encoding='utf-8') as csv_file:
         os.makedirs(page_group_folder_name, exist_ok=True)
 
         for page in page_group['data']:
-            if not (page_group['type'] == 'jmlr_volume' and page['year'] == '2014'):
-                continue
-
             print('Crawling page ' + page_group['name'] + ' ' + page['year'], end='')
             sys.stdout.flush()
 
             # Extract and parse page data
             page_data = manipulate_page_html(requests.get(page['link']).text, page_group['type'])
             page_soup = BeautifulSoup(page_data, 'html.parser')
-            paper_list = get_paper_list(page_soup, page_group['type'])[:5]
+            paper_list = get_paper_list(page_soup, page_group['type'])
 
             # Extract paper data
             for index, paper in enumerate(paper_list):
@@ -321,8 +320,8 @@ with open(csv_file_name, 'w', newline='', encoding='utf-8') as csv_file:
                 while os.path.isfile(paper_file_path):
                     paper_data['paper_file_name'] += '_1'
                     paper_file_path = paper_folder + paper_data['paper_file_name']
-                #with open(paper_file_path, 'wb') as paper_file:
-                   # paper_file.write(requests.get(paper_data['pdf_link']).content)
+                with open(paper_file_path, 'wb') as paper_file:
+                    paper_file.write(requests.get(paper_data['pdf_link']).content)
 
                 # Download abstract and write it to disk
                 abstract_file_path = paper_file_path.replace('.pdf', '.abs')
@@ -345,8 +344,3 @@ with open(csv_file_name, 'w', newline='', encoding='utf-8') as csv_file:
 # Problems:
 # - NIPS has no abstracts 2005 - 2007 (text is "Abstract missing") -> Abstract rectifier
 # - ICML has no abstracts 2005 - 2006  -> Abstract rectifier
-
-# Testparse results:
-# - Encoding errors:
-#   - ICML 2013, muandet13.pdf, Author
-#   - JMLR 2014, lember14a.pdf, Author, Abstract
