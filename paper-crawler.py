@@ -184,20 +184,21 @@ def get_paper_data(paper, page_type, page_address):
     year = ''
 
     if page_type == 'icml_jmlr_hosted':
-        paper_page_soup = BeautifulSoup(requests.get(urljoin(page_address, paper.find('a', text='abs').attrs['href'])).text, 'html.parser')
+        # Manual UTF-8 decode, because requests erroneously thinks the page is ISO-8559-1 encoded
+        paper_page_soup = BeautifulSoup(requests.get(urljoin(page_address, paper.find('a', text='abs').attrs['href'])).content.decode('utf-8'), 'html.parser')
 
-        title = paper.find('p', {'class': 'title'}).text
-        authors = paper.find('span', {'class': 'authors'}).text.replace('\t', '').replace('\n', '').replace(',', ', ')
+        title = paper_page_soup.find('h1').text
+        authors = paper_page_soup.find('div', id='authors').text
         web_link = urljoin(page_address, paper.find('a', text='abs').attrs['href'])
         paper_file_name = paper.find('a', text='pdf').attrs['href'].split('/')[-1]
         pdf_link = urljoin(page_address, paper_page_soup.find('a', text='Download PDF').attrs['href'])
         abstract_data = paper_page_soup.find('div', id='abstract').text
 
     elif page_type == 'jmlr_volume':
-        paper_page_soup = BeautifulSoup(manipulate_page_html(requests.get(urljoin(page_address, paper.find('a', text='abs').attrs['href'])).text, 'jmlr_paper'), 'html.parser')
+        paper_page_soup = BeautifulSoup(manipulate_page_html(requests.get(urljoin(page_address, paper.find('a', text='abs').attrs['href'])).content.decode('utf-8'), 'jmlr_paper'), 'html.parser')
 
-        title = paper.find('dt').next_element
-        authors = paper.find('dd').find('i').text
+        title = paper_page_soup.find('h2').text
+        authors = paper_page_soup.find('h2').find_next('i').text
         web_link = urljoin(page_address, paper.find('a', text='abs').attrs['href'])
         paper_file_name = paper.find('a', text='pdf').attrs['href'].split('/')[-1]
         pdf_link = urljoin(page_address, paper_page_soup.find('a', text='pdf').attrs['href'])
@@ -296,7 +297,7 @@ with open(csv_file_name, 'w', newline='', encoding='utf-8') as csv_file:
         os.makedirs(page_group_folder_name, exist_ok=True)
 
         for page in page_group['data']:
-            if page_group['type'] != 'jmlr2014':
+            if not (page_group['type'] == 'jmlr_volume' and page['year'] == '2014'):
                 continue
 
             print('Crawling page ' + page_group['name'] + ' ' + page['year'], end='')
@@ -320,8 +321,8 @@ with open(csv_file_name, 'w', newline='', encoding='utf-8') as csv_file:
                 while os.path.isfile(paper_file_path):
                     paper_data['paper_file_name'] += '_1'
                     paper_file_path = paper_folder + paper_data['paper_file_name']
-                with open(paper_file_path, 'wb') as paper_file:
-                    paper_file.write(requests.get(paper_data['pdf_link']).content)
+                #with open(paper_file_path, 'wb') as paper_file:
+                   # paper_file.write(requests.get(paper_data['pdf_link']).content)
 
                 # Download abstract and write it to disk
                 abstract_file_path = paper_file_path.replace('.pdf', '.abs')
@@ -342,8 +343,8 @@ with open(csv_file_name, 'w', newline='', encoding='utf-8') as csv_file:
             print('\rFinished crawling page ' + page_group['name'] + ' ' + page['year'] + ' (' + str(len(paper_list)) + ' papers)')
 
 # Problems:
-# - NIPS has no abstracts 2005 - 2007 (text is "Abstract missing"
-# - ICML has no abstracts 2005 - 2006
+# - NIPS has no abstracts 2005 - 2007 (text is "Abstract missing") -> Abstract rectifier
+# - ICML has no abstracts 2005 - 2006  -> Abstract rectifier
 
 # Testparse results:
 # - Encoding errors:
