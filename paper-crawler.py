@@ -301,9 +301,6 @@ with open(csv_file_name, 'w', newline='', encoding='utf-8') as csv_file:
         os.makedirs(page_group_folder_name, exist_ok=True)
 
         for page in page_group['data']:
-            if not (page_group['name'] == 'JMLR volume' and page['year'] == '2015'):
-                continue
-
             print('Crawling page ' + page_group['name'] + ' ' + page['year'], end='')
             sys.stdout.flush()
 
@@ -314,9 +311,6 @@ with open(csv_file_name, 'w', newline='', encoding='utf-8') as csv_file:
 
             # Extract paper data
             for index, paper in enumerate(paper_list):
-                if index < 103:
-                    continue
-
                 paper_data = get_paper_data(paper, page_group['type'], page['link'])
 
                 # Create folder for year if it doesn't exist yet
