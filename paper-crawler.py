@@ -2,6 +2,7 @@ import os
 import csv
 import shutil
 import sys
+import json
 from urllib.parse import urljoin
 from itertools import islice
 from re import sub
@@ -11,6 +12,7 @@ from bs4 import BeautifulSoup
 
 papers_folder = 'papers'
 csv_file_name = 'papers.csv'
+progress_file_name = 'progress.json'
 csv_columns = ['Title', 'Authors', 'WebLink', 'PaperFile', 'AbstractFile', 'Source', 'Year']
 
 pages_to_crawl = [{'type': 'icml_jmlr_hosted',
@@ -203,7 +205,7 @@ def get_paper_data(paper, page_type, page_address):
         authors = paper_page_soup.find('h2').find_next('i').text
         web_link = urljoin(page_address, paper.find('a', text='abs').attrs['href'])
         paper_file_name = paper.find('a', text='pdf').attrs['href'].split('/')[-1]
-        pdf_link = urljoin(page_address, paper_page_soup.find('a', text='pdf').attrs['href'])
+        pdf_link = urljoin(page_address, paper.find('a', text='pdf').attrs['href'])
         abstract_data = paper_page_soup.find('div', id='abstract').text
 
     elif page_type == 'icml2012':
@@ -299,6 +301,9 @@ with open(csv_file_name, 'w', newline='', encoding='utf-8') as csv_file:
         os.makedirs(page_group_folder_name, exist_ok=True)
 
         for page in page_group['data']:
+            if not (page_group['name'] == 'JMLR volume' and page['year'] == '2015'):
+                continue
+
             print('Crawling page ' + page_group['name'] + ' ' + page['year'], end='')
             sys.stdout.flush()
 
@@ -309,6 +314,9 @@ with open(csv_file_name, 'w', newline='', encoding='utf-8') as csv_file:
 
             # Extract paper data
             for index, paper in enumerate(paper_list):
+                if index < 103:
+                    continue
+
                 paper_data = get_paper_data(paper, page_group['type'], page['link'])
 
                 # Create folder for year if it doesn't exist yet
