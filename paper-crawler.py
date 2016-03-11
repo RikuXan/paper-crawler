@@ -187,104 +187,108 @@ def get_paper_data(paper, page_type, page_address):
     source = ''
     year = ''
 
-    if page_type == 'icml_jmlr_hosted':
-        # Manual UTF-8 decode, because requests erroneously thinks the page is ISO-8559-1 encoded
-        paper_page_soup = BeautifulSoup(requests.get(urljoin(page_address, paper.find('a', text='abs').attrs['href'])).content.decode('utf-8'), 'html.parser')
+    try:
+        if page_type == 'icml_jmlr_hosted':
+            # Manual UTF-8 decode, because requests erroneously thinks the page is ISO-8559-1 encoded
+            paper_page_soup = BeautifulSoup(requests.get(urljoin(page_address, paper.find('a', text='abs').attrs['href'])).content.decode('utf-8'), 'html.parser')
 
-        title = paper_page_soup.find('h1').text
-        authors = paper_page_soup.find('div', id='authors').text
-        web_link = urljoin(page_address, paper.find('a', text='abs').attrs['href'])
-        paper_file_name = paper.find('a', text='pdf').attrs['href'].split('/')[-1]
-        pdf_link = urljoin(page_address, paper_page_soup.find('a', text='Download PDF').attrs['href'])
-        abstract_data = paper_page_soup.find('div', id='abstract').text
+            title = paper_page_soup.find('h1').text
+            authors = paper_page_soup.find('div', id='authors').text
+            web_link = urljoin(page_address, paper.find('a', text='abs').attrs['href'])
+            paper_file_name = paper.find('a', text='pdf').attrs['href'].split('/')[-1]
+            pdf_link = urljoin(page_address, paper_page_soup.find('a', text='Download PDF').attrs['href'])
+            abstract_data = paper_page_soup.find('div', id='abstract').text
 
-    elif page_type == 'jmlr_volume':
-        paper_page_soup = BeautifulSoup(manipulate_page_html(requests.get(urljoin(page_address, paper.find('a', text='abs').attrs['href'])).content.decode('utf-8'), 'jmlr_paper'), 'html.parser')
+        elif page_type == 'jmlr_volume':
+            paper_page_soup = BeautifulSoup(manipulate_page_html(requests.get(urljoin(page_address, paper.find('a', text='abs').attrs['href'])).content.decode('utf-8'), 'jmlr_paper'), 'html.parser')
 
-        title = paper_page_soup.find('h2').text
-        authors = paper_page_soup.find('h2').find_next('i').text
-        web_link = urljoin(page_address, paper.find('a', text='abs').attrs['href'])
-        paper_file_name = paper.find('a', text='pdf').attrs['href'].split('/')[-1]
-        pdf_link = urljoin(page_address, paper.find('a', text='pdf').attrs['href'])
-        abstract_data = paper_page_soup.find('div', id='abstract').text
+            title = paper_page_soup.find('h2').text
+            authors = paper_page_soup.find('h2').find_next('i').text
+            web_link = urljoin(page_address, paper.find('a', text='abs').attrs['href'])
+            paper_file_name = paper.find('a', text='pdf').attrs['href'].split('/')[-1]
+            pdf_link = urljoin(page_address, paper.find('a', text='pdf').attrs['href'])
+            abstract_data = paper_page_soup.find('div', id='abstract').text
 
-    elif page_type == 'icml2012':
-        title = paper.find('h2').text
-        authors = paper.find('p', {'class': 'authors'}).next_element
-        web_link = urljoin(page_address, paper.find('a', text='more on ArXiv').attrs['href']) if paper.find('a', text='more on ArXiv')is not None else page_address
-        paper_file_name = paper.find('a', text='ICML version (pdf)').attrs['href'].split('/')[-1]
-        pdf_link = urljoin(page_address, paper.find('a', text='ICML version (pdf)').attrs['href'])
-        abstract_data = next(islice(paper.find('p', {'class': 'abstract'}).next_elements, 2, None))
+        elif page_type == 'icml2012':
+            title = paper.find('h2').text
+            authors = paper.find('p', {'class': 'authors'}).next_element
+            web_link = urljoin(page_address, paper.find('a', text='more on ArXiv').attrs['href']) if paper.find('a', text='more on ArXiv')is not None else page_address
+            paper_file_name = paper.find('a', text='ICML version (pdf)').attrs['href'].split('/')[-1]
+            pdf_link = urljoin(page_address, paper.find('a', text='ICML version (pdf)').attrs['href'])
+            abstract_data = next(islice(paper.find('p', {'class': 'abstract'}).next_elements, 2, None))
 
-    elif page_type == 'icml2011':
-        title = paper.find('h3').text
-        authors = paper.find('span', {'class': 'name'}).text
-        web_link = page_address
-        paper_file_name = paper.find('a', text='download').attrs['href'].split('/')[-1]
-        pdf_link = urljoin(page_address, paper.find('a', text='download').attrs['href'])
-        abstract_data = next(islice(paper.find('p').next_elements, 2, None))
+        elif page_type == 'icml2011':
+            title = paper.find('h3').text
+            authors = paper.find('span', {'class': 'name'}).text
+            web_link = page_address
+            paper_file_name = paper.find('a', text='download').attrs['href'].split('/')[-1]
+            pdf_link = urljoin(page_address, paper.find('a', text='download').attrs['href'])
+            abstract_data = next(islice(paper.find('p').next_elements, 2, None))
 
-    elif page_type == 'icml2010':
-        title = paper.find('h3').text
-        authors = sub(r' +\(.*?\)', '', sub(r' *; *', ', ', paper.find('em').text))
-        web_link = page_address
-        paper_file_name = paper.find('a', text='Full Paper').attrs['href'].split('/')[-1]
-        pdf_link = urljoin(page_address, paper.find('a', text='Full Paper').attrs['href'])
-        abstract_data = sub(r'[\s]+', ' ', paper.find('p', {'class': 'abstracts'}).text)
+        elif page_type == 'icml2010':
+            title = paper.find('h3').text
+            authors = sub(r' +\(.*?\)', '', sub(r' *; *', ', ', paper.find('em').text))
+            web_link = page_address
+            paper_file_name = paper.find('a', text='Full Paper').attrs['href'].split('/')[-1]
+            pdf_link = urljoin(page_address, paper.find('a', text='Full Paper').attrs['href'])
+            abstract_data = sub(r'[\s]+', ' ', paper.find('p', {'class': 'abstracts'}).text)
 
-    elif page_type == 'icml2009':
-        title = paper.find('h3').text
-        authors = paper.find('i').text.replace(' and ', ', ')
-        web_link = page_address
-        paper_file_name = paper.find('a', text='Full paper').attrs['href'].split('/')[-1]
-        pdf_link = urljoin(page_address, paper.find('a', text='Full paper').attrs['href'])
-        abstract_data = paper.find('a', text='Full paper').find_previous('p').text
+        elif page_type == 'icml2009':
+            title = paper.find('h3').text
+            authors = paper.find('i').text.replace(' and ', ', ')
+            web_link = page_address
+            paper_file_name = paper.find('a', text='Full paper').attrs['href'].split('/')[-1]
+            pdf_link = urljoin(page_address, paper.find('a', text='Full paper').attrs['href'])
+            abstract_data = paper.find('a', text='Full paper').find_previous('p').text
 
-    elif page_type == 'icml2008':
-        title = paper.find('h3').text
-        authors = paper.find('i').text.replace(' and ', ', ')
-        web_link = page_address
-        paper_file_name = paper.find('a', text='Full paper').attrs['href'].split('/')[-1]
-        pdf_link = urljoin(page_address, paper.find('a', text='Full paper').attrs['href'])
-        abstract_data = paper.contents[8].text
+        elif page_type == 'icml2008':
+            title = paper.find('h3').text
+            authors = paper.find('i').text.replace(' and ', ', ')
+            web_link = page_address
+            paper_file_name = paper.find('a', text='Full paper').attrs['href'].split('/')[-1]
+            pdf_link = urljoin(page_address, paper.find('a', text='Full paper').attrs['href'])
+            abstract_data = paper.contents[8].text
 
-    elif page_type == 'icml2007':
-        paper_page_soup = BeautifulSoup(requests.get(urljoin(page_address, paper.find('a', text='[Abstract]').attrs['href'])).text, 'html.parser')
+        elif page_type == 'icml2007':
+            paper_page_soup = BeautifulSoup(requests.get(urljoin(page_address, paper.find('a', text='[Abstract]').attrs['href'])).text, 'html.parser')
 
-        title = paper_page_soup.find('table').contents[0].text
-        authors = ', '.join([sub(r' - .*', r'', author) for author in paper_page_soup.find('table').contents[1].text.split('\n\n')])
-        web_link = urljoin(page_address, paper.find('a', text='[Abstract]').attrs['href'])
-        paper_file_name = paper.find('a', text='[Paper]').attrs['href'].split('/')[-1]
-        pdf_link = urljoin(page_address, paper.find('a', text='[Paper]').attrs['href'])
-        abstract_data = paper_page_soup.find('table').contents[2].text
+            title = paper_page_soup.find('table').contents[0].text
+            authors = ', '.join([sub(r' - .*', r'', author) for author in paper_page_soup.find('table').contents[1].text.split('\n\n')])
+            web_link = urljoin(page_address, paper.find('a', text='[Abstract]').attrs['href'])
+            paper_file_name = paper.find('a', text='[Paper]').attrs['href'].split('/')[-1]
+            pdf_link = urljoin(page_address, paper.find('a', text='[Paper]').attrs['href'])
+            abstract_data = paper_page_soup.find('table').contents[2].text
 
-    elif page_type == 'icml2006':
-        title = paper.find('em').text
-        authors = paper.contents[5].text
-        web_link = page_address
-        paper_file_name = paper.find('a').attrs['href'].split('/')[-1]
-        pdf_link = urljoin(page_address, paper.find('a').attrs['href'])
-        abstract_data = ''
+        elif page_type == 'icml2006':
+            title = paper.find('em').text
+            authors = paper.contents[5].text
+            web_link = page_address
+            paper_file_name = paper.find('a').attrs['href'].split('/')[-1]
+            pdf_link = urljoin(page_address, paper.find('a').attrs['href'])
+            abstract_data = ''
 
-    elif page_type == 'icml2005':
-        title = paper.find('tr', {'class': 'proc_2005_link'}).find('a').text
-        authors = paper.find('tr', {'class': 'proc_2005_authors'}).text
-        web_link = page_address
-        paper_file_name = paper.find('tr', {'class': 'proc_2005_link'}).find('a').attrs['href'].split('/')[-1]
-        pdf_link = urljoin(page_address, paper.find('tr', {'class': 'proc_2005_link'}).find('a').attrs['href'])
-        abstract_data = ''
+        elif page_type == 'icml2005':
+            title = paper.find('tr', {'class': 'proc_2005_link'}).find('a').text
+            authors = paper.find('tr', {'class': 'proc_2005_authors'}).text
+            web_link = page_address
+            paper_file_name = paper.find('tr', {'class': 'proc_2005_link'}).find('a').attrs['href'].split('/')[-1]
+            pdf_link = urljoin(page_address, paper.find('tr', {'class': 'proc_2005_link'}).find('a').attrs['href'])
+            abstract_data = ''
 
-    elif page_type == 'papers_nips':
-        paper_page_soup = BeautifulSoup(requests.get(urljoin(page_address, paper.find('a').attrs['href'])).text, 'html.parser')
+        elif page_type == 'papers_nips':
+            paper_page_soup = BeautifulSoup(requests.get(urljoin(page_address, paper.find('a').attrs['href'])).text, 'html.parser')
 
-        title = paper_page_soup.find('h2', {'class': 'subtitle'}).text
-        authors = ', '.join([author.text for author in paper_page_soup.find('ul', {'class': 'authors'}).find_all('li')])
-        web_link = urljoin(page_address, paper.find('a').attrs['href'])
-        paper_file_name = paper_page_soup.find('a', text='[PDF]').attrs['href'].split('/')[-1]
-        pdf_link = urljoin(page_address, paper_page_soup.find('a', text='[PDF]').attrs['href'])
-        abstract_data = paper_page_soup.find('p', {'class': 'abstract'}).text.replace('Abstract missing', '').replace('Abstract Missing', '')
+            title = paper_page_soup.find('h2', {'class': 'subtitle'}).text
+            authors = ', '.join([author.text for author in paper_page_soup.find('ul', {'class': 'authors'}).find_all('li')])
+            web_link = urljoin(page_address, paper.find('a').attrs['href'])
+            paper_file_name = paper_page_soup.find('a', text='[PDF]').attrs['href'].split('/')[-1]
+            pdf_link = urljoin(page_address, paper_page_soup.find('a', text='[PDF]').attrs['href'])
+            abstract_data = paper_page_soup.find('p', {'class': 'abstract'}).text.replace('Abstract missing', '').replace('Abstract Missing', '')
 
-    return {'title': clean_text(title), 'authors': clean_text(authors), 'web_link': web_link, 'paper_file_name': paper_file_name, 'pdf_link': pdf_link, 'abstract_data': clean_text(abstract_data), 'source': source, 'year': year}
+    except AttributeError:
+        return {'skip': True}
+
+    return {'title': clean_text(title), 'authors': clean_text(authors), 'web_link': web_link, 'paper_file_name': paper_file_name, 'pdf_link': pdf_link, 'abstract_data': clean_text(abstract_data), 'source': source, 'year': year, 'skip': False}
 
 # Clear existing data
 shutil.rmtree(papers_folder, ignore_errors=True)
@@ -312,6 +316,8 @@ with open(csv_file_name, 'w', newline='', encoding='utf-8') as csv_file:
             # Extract paper data
             for index, paper in enumerate(paper_list):
                 paper_data = get_paper_data(paper, page_group['type'], page['link'])
+                if paper_data['skip'] is True:
+                    continue
 
                 # Create folder for year if it doesn't exist yet
                 paper_folder = page_group_folder_name + '/' + page['year'] if 'year' in page else paper_data['year']
